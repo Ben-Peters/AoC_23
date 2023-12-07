@@ -7,7 +7,7 @@ const string FILENAME = "puzzle4.input.txt";
 const int INPUT_GAMES = 197;
 const int WINNERS = 10;
 const int MINE = 25;
-//#define PART_1 1;
+//#define PART_1 1
 
 int main(){
   string line;

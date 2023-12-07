@@ -6,7 +6,7 @@ using namespace std;
 const string FILENAME = "puzzle3.input.txt";
 const int INPUT_COL = 140;
 const int INPUT_ROW = 140;
-//#define PART_1 1;
+//#define PART_1 1
 
 int find_number(char grid[][INPUT_COL], int i, int j){
     int start;
