@@ -8,8 +8,6 @@ const string FILENAME = "puzzle7.input.txt";
 const int NUM_HANDS = 1000;
 #define PART_2 1
 
-char card_opts[12] = {'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2'};
-
 enum hand_type {
     FIVE_OF_KIND = 7,
     FOUR_OF_KIND = 6,
@@ -82,27 +80,6 @@ hand_type findType(string hand){
         return HIGH_CARD;
     }
     return NO_TYPE;
-}
-
-hand_type find_best_joker(string hand, int char_opt){
-    hand_type best_hand = NO_TYPE;
-    if(count(hand.begin(),hand.end(), 'J')){
-        hand.replace(hand.find('J'),1,&card_opts[char_opt],1);
-        return max(max(max(max(max(max(max(max(max(max(max(find_best_joker(hand,0),
-                        find_best_joker(hand,1)),
-                        find_best_joker(hand,2)),
-                        find_best_joker(hand,3)),
-                        find_best_joker(hand,4)),
-                        find_best_joker(hand,5)),
-                        find_best_joker(hand,6)),
-                        find_best_joker(hand,7)),
-                        find_best_joker(hand,8)),
-                        find_best_joker(hand,9)),
-                        find_best_joker(hand,10)),
-                        find_best_joker(hand,11));
-    }else {
-        return findType(hand);
-    }
 }
 
 int card_to_int(char c){
@@ -181,13 +158,6 @@ int main(){
   {
     for(int i=0; i<NUM_HANDS; i++){
         getline (myfile,line);
-//        hand_type best_type = NO_TYPE;
-//        string cards = line.substr(0,5);
-//        for(int j=0; j<12; j++){
-//            if( count(cards.begin(),cards.end(), 'J')){
-//                best_type = max(find_best_joker(line.substr(0,5),j), best_type);
-//            }
-//        }
         hands[i] = hand(
             line.substr(0,5),
             stoi(line.substr(6)),
