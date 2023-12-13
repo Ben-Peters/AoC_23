@@ -4,7 +4,7 @@
 #include <regex>
 #include <list>
 using namespace std;
-const string FILENAME = "puzzle9.input.txt";
+const string FILENAME = "puzzle9.input.txt.test";
 const int NUM_SEQS = 200;
 #define PART_2 1
 
