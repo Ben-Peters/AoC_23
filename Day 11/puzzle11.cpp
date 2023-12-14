@@ -7,11 +7,13 @@ const string FILENAME = "puzzle11.input.txt";
 const int GRID_LEN = 140;
 const int GRID_WID = 140;
 
-struct coordinate{
-    int x;
-    int y;
+#define PART_2
 
-    coordinate(int newX, int newY){
+struct coordinate{
+    long long x;
+    long long y;
+
+    coordinate(long long newX, long long newY){
         x = newX;
         y = newY;
     }
@@ -33,12 +35,20 @@ list<galaxy> galaxies;
 list< pair<galaxy,galaxy> > pairs;
 
 
-void expand(bool vertical, int thresh){
+void expand(bool vertical, long long thresh){
     for(galaxy &g: galaxies){
         if(g.location.x > thresh && vertical){
+            #ifdef PART_2
+            g.location.x +=999999;
+            #else
             g.location.x +=1;
+            #endif
         }else if(g.location.y > thresh && !vertical){
+            #ifdef PART_2
+            g.location.y +=999999;
+            #else
             g.location.y +=1;
+            #endif
         }
     }
 }
@@ -63,15 +73,25 @@ int main(){
         row_col_grid[0][g.location.x] +=1;
         row_col_grid[1][g.location.y] +=1;
     }
-    int x_offset = 0;
-    int y_offset = 0;
-    for(int i=0; i<GRID_LEN; i++){
+    long long x_offset = 0;
+    long long y_offset = 0;
+    for(long long i=0; i<GRID_LEN; i++){
         if (!row_col_grid[0][i]){
             expand(true, i+x_offset);
-            x_offset++;
+            #ifdef PART_2
+            x_offset += 999999;
+            #else
+            x_offset += 1;
+            #endif
+            printf("Exanding x\n");
         }else if(!row_col_grid[1][i]){
             expand(false, i+y_offset);
-            y_offset++;
+            #ifdef PART_2
+            y_offset += 999999;
+             #else
+            y_offset += 1;
+            #endif
+            printf("Exanding y\n");
         }
     }
     for(list<galaxy>::iterator it1 = galaxies.begin(); it1 != galaxies.end(); it1++){
@@ -80,10 +100,10 @@ int main(){
             pairs.push_back(make_pair(*it1,*it2));
         }
     }
-    int sum = 0;
+    long long sum = 0;
     for(pair<galaxy, galaxy> p: pairs){
-        int dist = abs(p.first.location.x - p.second.location.x) + abs(p.first.location.y - p.second.location.y);
+        long long dist = abs(p.first.location.x - p.second.location.x) + abs(p.first.location.y - p.second.location.y);
         sum += dist;
     }
-    printf("SUM: %d\n",sum);
+    printf("SUM: %lld\n",sum);
 }
