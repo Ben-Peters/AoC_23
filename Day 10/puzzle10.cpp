@@ -28,6 +28,7 @@ struct pipe {
     bool inside_loop = false;
     pipe* next_pipe = nullptr;
     dir exit_dir;
+    dir ent_dir;
     int grid_pos[2];
 
     pipe(char c){
@@ -182,6 +183,7 @@ dir check_connection(pipe *p1, pipe *p2){
     p1->next_pipe = p2;
     if(p1->con1 == nullptr){
         p1->exit_dir = p1->dir1;
+        p1->ent_dir = p1->dir2;
         if(p1->dir1 == rev(p2->dir1)){
             p1->con1 = p2;
             p2->con1 = p1;
@@ -193,6 +195,7 @@ dir check_connection(pipe *p1, pipe *p2){
         }
     }else if(p1->con2 == nullptr){
         p1->exit_dir = p1->dir2;
+        p1->ent_dir = p1->dir1;
         if(p1->dir2 == rev(p2->dir1)){
             p1->con2 = p2;
             p2->con1 = p1;
@@ -299,6 +302,12 @@ int main(){
         int ant_norm[2];
         dir_to_vect(anti_normal(cur_pipe->exit_dir), ant_norm);
         pipe* inside_node = &grid[cur_pipe->grid_pos[1]+ant_norm[1]][cur_pipe->grid_pos[0]+ant_norm[0]];
+        if(!inside_node->con_to_start){
+            inside_node->inside_loop=true;
+        }
+        // Check if 90 pipe has ground next to it in the other direction
+        dir_to_vect(anti_normal(rev(cur_pipe->ent_dir)), ant_norm);
+        inside_node = &grid[cur_pipe->grid_pos[1]+ant_norm[1]][cur_pipe->grid_pos[0]+ant_norm[0]];
         if(!inside_node->con_to_start){
             inside_node->inside_loop=true;
         }
