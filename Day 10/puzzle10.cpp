@@ -25,6 +25,10 @@ struct pipe {
     pipe* con2 = nullptr;
     bool con_to_start = false;
     int dist_to_start;
+    bool inside_loop = false;
+    pipe* next_pipe = nullptr;
+    dir exit_dir;
+    int grid_pos[2];
 
     pipe(char c){
         switch (c){
@@ -111,55 +115,46 @@ void dump_grid(bool dist = false, bool filter = false){
                 if(p.con_to_start){
                     printf("%c", pipe_to_char(p));
                 } else {
-                    printf(".");
+                    if(p.inside_loop){
+                        printf("I");
+                    }else{
+                        printf(".");
+                    }
                 }
             }
         }
         printf("\n");
     }
+    printf("\n");
 }
 
-int** pipe_to_vect(pipe p, int (&vectors)[2][2]){
-    if(p.dir1 == NORTH){
-        vectors[0][0] = 0;
-        vectors[0][1] = -1;
-        if (p.dir2 == SOUTH){
-            vectors[1][0] = 0;
-            vectors[1][1] = 1;
-        }
-        else if (p.dir2 == EAST){
-            vectors[1][0] = 1;
-            vectors[1][1] = 0;
-        }
-        else if (p.dir2 == WEST){
-            vectors[1][0] = -1;
-            vectors[1][1] = 0;
-        }
-    } else if(p.dir1 == SOUTH){
-        vectors[0][0] = 0;
-        vectors[0][1] = 1;
-        if (p.dir2 == EAST){
-            vectors[1][0] = 1;
-            vectors[1][1] = 0;
-        }
-        else if (p.dir2 == WEST){
-            vectors[1][0] = -1;
-            vectors[1][1] = 0;
-        }
-    } else if (p.dir1 == EAST){
-        vectors[0][0] = 1;
-        vectors[0][1] = 0;
-        if (p.dir2 == WEST){
-            vectors[1][0] = -1;
-            vectors[1][1] = 0;
-        }
+void dir_to_vect(dir d, int (&v)[2]){
+    switch (d){
+        case NORTH:
+            v[0] = 0;
+            v[1] = -1;
+            break;
+        case SOUTH:
+            v[0] = 0;
+            v[1] = 1;
+            break;
+        case EAST:
+            v[0] = 1;
+            v[1] = 0;
+            break;
+        case WEST:
+            v[0] = -1;
+            v[1] = 0;
+            break;
+        default:
+            printf("\nDIR TO VECT RUN ON NONE\n");
+            break;
     }
 }
 
-int find_max_dist(){
-    while(true){
-        
-    }
+void pipe_to_vect(pipe p, int (&vectors)[2][2]){
+    dir_to_vect(p.dir1, vectors[0]);
+    dir_to_vect(p.dir2, vectors[1]);
 }
 
 dir rev(dir d){
@@ -172,6 +167,8 @@ dir rev(dir d){
             return WEST;
         case WEST:
             return EAST;
+        default:
+            return NONE;
     }
     return NONE;
 }
@@ -182,11 +179,9 @@ dir check_connection(pipe *p1, pipe *p2){
     }else if (p1->con2 == p2 || p2->con2 == p1){
         return p2->dir2;
     }
-    //int p1vect[2][2];
-    //pipe_to_vect(*p1,p1vect);
-    //int p2vect[2][2]; 
-    //pipe_to_vect(*p2,p2vect);
+    p1->next_pipe = p2;
     if(p1->con1 == nullptr){
+        p1->exit_dir = p1->dir1;
         if(p1->dir1 == rev(p2->dir1)){
             p1->con1 = p2;
             p2->con1 = p1;
@@ -197,6 +192,7 @@ dir check_connection(pipe *p1, pipe *p2){
             return p2->dir2;
         }
     }else if(p1->con2 == nullptr){
+        p1->exit_dir = p1->dir2;
         if(p1->dir2 == rev(p2->dir1)){
             p1->con2 = p2;
             p2->con1 = p1;
@@ -209,25 +205,34 @@ dir check_connection(pipe *p1, pipe *p2){
     }
     return NONE;
 }
-    // if(p1vect[0][0] + p2vect[0][0] == 0 && p1vect[0][1] + p2vect[0][1] == 0){
-    //     p1->con1 = p2;
-    //     p2->con1 = p1;
-    //     return p2->dir1;
-    // }else if(p1vect[1][0] + p2vect[1][0] == 0 && p1vect[1][1] + p2vect[1][1] == 0){
-    //     p1->con2 = p2;
-    //     p2->con2 = p1;
-    //     return p2->dir2;
-    // }else if(p1vect[0][0] + p2vect[1][0] == 0 && p1vect[0][1] + p2vect[1][1] == 0){
-    //     p1->con1 = p2;
-    //     p2->con2 = p1;
-    //     return p2->dir2;
-    // }else if(p1vect[1][0] + p2vect[0][0] == 0 && p1vect[1][1] + p2vect[0][1] == 0){
-    //     p1->con2 = p2;
-    //     p2->con1 = p1;
-    //     return p2->dir1;
-    // }
-//     return NONE;
-// }
+
+dir anti_normal(dir d){
+    switch (d){
+        case NORTH:
+            return WEST;
+        case WEST:
+            return SOUTH;
+        case SOUTH:
+            return EAST;
+        case EAST:
+            return NORTH;
+        default:
+            return NONE;
+    }
+}
+
+void propogate_inside(pipe* p){
+    for(int i=-1; i <= 1; i +=2){
+        for(int j=-1; j <= 1; j +=2){
+            pipe* adj = &grid[p->grid_pos[1]+i][p->grid_pos[0]+j];
+            if(!adj->con_to_start && !adj->inside_loop){
+                //Found an adjacent ground square that isn't marked
+                adj->inside_loop = true;
+                propogate_inside(adj);
+            }
+        }
+    }
+}
 
 int main(){
     ifstream myfile (FILENAME);
@@ -240,20 +245,23 @@ int main(){
                 start_x = j;
                 start_y = i;
             }
-            pipe_line.push_back(pipe(line[j]));
+            pipe p = pipe(line[j]);
+            p.grid_pos[0] = j;
+            p.grid_pos[1] = i;
+            pipe_line.push_back(p);
         }
         grid.push_back(pipe_line);
     }
     pipe *cur_pipe = &grid[start_y][start_x];
-    //int cur_vect[2][2] = {0, -1, 
-    //                     -1, 0};
     int cur_vect[2][2];
     pipe_to_vect(*cur_pipe, cur_vect);
     int next_x = start_x + cur_vect[0][0];
     int next_y = start_y + cur_vect[0][1];
+    cur_pipe->grid_pos[0] = start_x;
+    cur_pipe->grid_pos[1] = start_y;
     int dist = 0;
     pipe *next_pipe = &grid[next_y][next_x];
-    dir last_dir = SOUTH;
+    dir last_dir = rev(cur_pipe->dir1);
     while (next_pipe != &grid[start_y][start_x]){
         last_dir = check_connection(cur_pipe, next_pipe);
         if (last_dir != NONE){
@@ -276,34 +284,49 @@ int main(){
         }
         else{
             printf("we are looking off the track\n");
+            return -1;
         }
         //dump_grid(false, true);
-        //printf("\x1b[2J");
+        //printf("\n");
     }
+    check_connection(cur_pipe, next_pipe);
     dump_grid(false, true);
     printf("Max Dist = %d / 2 = %d\n", dist+1, (dist+1)/2);
-    // vector<int[2]> past_cord;
-    // 
-    // for (vector<pipe> line : grid){
-    //     for(pipe p : line){
-    //         int **vect = pipe_to_vect(p);
-    //         pipe next_pipe = grid[cur_y + vect[0][1]][cur_x + vect[0][0]];
-    //         int **next_vect = pipe_to_vect(next_pipe);
-    //         if((vect[0][1] + next_vect[0][1] == 0 && vect[0][0] + next_vect[0][0]
-    //             || (vect[0][1] + next_vect[1][1] == 0 && vect[0][0] + next_vect[1][0]))){
-    //             cur_x = cur_x + vect[0][0];
-    //             cur_y = cur_y + vect[0][1];
-    //             p.con1 = &next_pipe;
-    //         }else {
-    //             next_pipe = grid[cur_y + vect[1][1]][cur_x + vect[1][0]];
-    //             next_vect = pipe_to_vect(next_pipe);
-    //             if((vect[1][1] + next_vect[0][1] == 0 && vect[1][0] + next_vect[0][0]
-    //             || (vect[1][1] + next_vect[1][1] == 0 && vect[1][0] + next_vect[1][0]))){
-    //                 cur_x = cur_x + vect[1][0];
-    //                 cur_y = cur_y + vect[1][1];
-    //                 p.con2 = &next_pipe;
-    //             }
-    //         }
-    //     }
-    // }
+    cur_pipe = &grid[start_y][start_x];
+    next_pipe = cur_pipe->next_pipe;
+    int shoestirng = 0;
+    while(cur_pipe != &grid[start_y][start_x] || shoestirng == 0){
+        int ant_norm[2];
+        dir_to_vect(anti_normal(cur_pipe->exit_dir), ant_norm);
+        pipe* inside_node = &grid[cur_pipe->grid_pos[1]+ant_norm[1]][cur_pipe->grid_pos[0]+ant_norm[0]];
+        if(!inside_node->con_to_start){
+            inside_node->inside_loop=true;
+        }
+        shoestirng += (((cur_pipe->grid_pos[0]+1)*(next_pipe->grid_pos[1]+1))-((cur_pipe->grid_pos[1]+1)*(next_pipe->grid_pos[0]+1)));
+        cur_pipe = next_pipe;
+        next_pipe = cur_pipe->next_pipe;
+    }
+    dump_grid(false,true);
+    for(vector<pipe> line : grid){
+        for(pipe p : line){
+            if(p.inside_loop){
+                propogate_inside(&p);
+            }
+        }
+    }
+    int sum = 0;
+    for(vector<pipe> line : grid){
+        for(pipe p : line){
+            if(p.inside_loop){
+                sum++;
+            }
+        }
+    }
+    dump_grid(false,true);
+    printf("SUM: %d\n", sum); 
+    if (shoestirng < 0){
+        shoestirng *= -1;
+    }
+    int area = shoestirng / 2;
+    printf("SHOESTRING: %d\n", (area + 1 - ((dist+1)/2)));
 }
